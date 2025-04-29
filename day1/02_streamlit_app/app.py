@@ -1,3 +1,6 @@
+import os
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"  # 🔴 これが重要
+
 # app.py
 import streamlit as st
 import ui                   # UIモジュール
@@ -6,7 +9,7 @@ import database             # データベースモジュール
 import metrics              # 評価指標モジュール
 import data                 # データモジュール
 import torch
-from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from config import MODEL_NAME
 from huggingface_hub import HfFolder
 
@@ -31,10 +34,14 @@ def load_model():
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         st.info(f"Using device: {device}") # 使用デバイスを表示
+
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float16, device_map="auto")
+
         pipe = pipeline(
             "text-generation",
-            model=MODEL_NAME,
-            model_kwargs={"torch_dtype": torch.bfloat16},
+            model=model,
+            tokenizer=tokenizer,
             device=device
         )
         st.success(f"モデル '{MODEL_NAME}' の読み込みに成功しました。")
