@@ -11,6 +11,7 @@ import pickle
 import time
 import great_expectations as gx
 
+
 class DataLoader:
     """データロードを行うクラス"""
 
@@ -248,6 +249,32 @@ def test_model_performance():
     ), f"推論時間が長すぎます: {metrics['inference_time']}秒"
 
 
+def test_inference_speed_and_accuracy(path=None):
+    """
+    推論時間と精度をチェックする関数
+
+    Args:
+        path (str): データセットの絶対パスまたは相対パス（省略時はデフォルトのTitanic.csv）
+    """
+    print("== 推論時間と精度チェック ==")
+    # データのロード
+    data = DataLoader.load_titanic_data(path)
+    X, y = DataLoader.preprocess_titanic_data(data)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # モデルの学習
+    model = ModelTester.train_model(X_train, y_train)
+    # 推論時間と精度の計算
+    metrics = ModelTester.evaluate_model(model, X_test, y_test)
+
+    print(f"精度: {metrics['accuracy']:.4f}")
+    print(f"推論時間: {metrics['inference_time']:.4f}秒")
+    baseline_ok = ModelTester.compare_with_baseline(metrics)
+    print(f"ベースライン比較: {'合格' if baseline_ok else '不合格'}")
+
+
 if __name__ == "__main__":
     # データロード
     data = DataLoader.load_titanic_data()
@@ -278,6 +305,8 @@ if __name__ == "__main__":
 
     print(f"精度: {metrics['accuracy']:.4f}")
     print(f"推論時間: {metrics['inference_time']:.4f}秒")
+
+    test_inference_speed_and_accuracy()
 
     # モデル保存
     model_path = ModelTester.save_model(model)
